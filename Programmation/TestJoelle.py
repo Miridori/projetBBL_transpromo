@@ -33,6 +33,8 @@ MAX_US = 2500           # impulsion pour 180°
 ANGLE_BAS = 0
 ANGLE_HAUT = 90         #### à changer pour voir quel angle fait monter le piston
 
+PIN_BOUTON = 20
+
 DELAI_SERVO = 300    # temps laissé à UN servo pour finir son mouvement
 PAUSE_LETTRE = 1000  # temps pendant lequel la lettre reste affichée, on peut mettre plus longtemps, 2000 = 2sec
 
@@ -55,9 +57,9 @@ alphabet_braille = {
     'y': ["Y.wav", [1,0,1,1,1,1]], 'z': ["Z.wav", [1,0,1,0,1,1]]
 }
 
-# alphabet_braille = {'a':[1,0,0,0,0,0], 'b':[1,1,0,0,0,0], 'c':[1,0,0,1,0,0], 'd':[1,0,0,1,1,0], 'e':[1,0,0,0,1,0], 'f':[1,1,0,1,0,0], 'g':[1,1,0,1,1,0], 'h':[1,1,0,0,1,0], 'i':[0,1,0,1,0,0], 'j':[0,1,0,1,1,0],
-#                   'k':[1,0,1,0,0,0], 'l':[1,1,1,0,0,0], 'm':[1,0,1,1,0,0], 'n':[1,0,1,1,1,0], 'o':[1,0,1,0,1,0], 'p':[1,1,1,1,0,0], 'q':[1,1,1,1,1,0], 'r':[1,1,1,0,1,0], 's':[0,1,1,1,0,0], 't':[0,1,1,1,1,0],
-#                  'u':[1,0,1,0,0,1], 'v':[1,1,1,0,0,1], 'w':[0,1,0,1,1,1], 'x':[1,0,1,1,0,1], 'y':[1,0,1,1,1,1], 'z':[1,0,1,0,1,1]}
+alphabet_braille = {'a':["A.wav",[1,0,0,0,0,0]], 'b':["B.wav", [1,1,0,0,0,0]], 'c':["C.wav",[1,0,0,1,0,0]], 'd':["D.wav",[1,0,0,1,1,0]], 'e':["E.wav",[1,0,0,0,1,0]], 'f':["F.wav", [1,1,0,1,0,0]], 'g':["G.wav",[1,1,0,1,1,0]], 'h':["H.wav",[1,1,0,0,1,0]], 'i':["I.wav",[0,1,0,1,0,0]], 'j':["J.wav",[0,1,0,1,1,0]],
+                  'k':["K.wav",[1,0,1,0,0,0]], 'l':["L.wav",[1,1,1,0,0,0]], 'm':["M.wav",[1,0,1,1,0,0]], 'n':["N.wav",[1,0,1,1,1,0]], 'o':["O.wav",[1,0,1,0,1,0]], 'p':["P.wav",[1,1,1,1,0,0]], 'q':["Q.wav",[1,1,1,1,1,0]], 'r':["R.wav",[1,1,1,0,1,0]], 's':["S.wav",[0,1,1,1,0,0]], 't':["T.wav",[0,1,1,1,1,0]],
+                 'u':["U.wav",[1,0,1,0,0,1]], 'v':["V.wav",[1,1,1,0,0,1]], 'w':["W.wav", [0,1,0,1,1,1]], 'x':["X.wav", [1,0,1,1,0,1]], 'y':["Y.wav", [1,0,1,1,1,1]], 'z':["Z.wav",[1,0,1,0,1,1]]}
 
 
 fichier_wav = "Bienvenue.wav"
@@ -149,12 +151,36 @@ def afficher(config):
 # -----------------------------------
 print("Si jamais ça part en couilles, Ctrl+C pour couper le programme")
 try:
-    # Position de départ : tout RELEVÉ (pour correspondre à etat_actuel = [1,1,1,1,1,1])
+    # Position de départ : tout baissé 
     for canal in liste_servo:
         set_servo_angle(canal, ANGLE_HAUT)
         time.sleep_ms(DELAI_SERVO)
         
     audio("Bienvenue.wav")
+
+
+# DECOMMENTER POUR TESTER LE BOUTON 
+
+#         # Attendre 10sec (avec un timer de 10 secondes). Si on appuie durant ce laps de temps, créer variable choix_aleatoire = False. Puis baisser tous les picots
+#     choix_aleatoire = False # par défaut
+#     depart = time.time()
+#     arrive = time.time()
+
+#    while arrive-depart < 10 : # on a mit 10 sec mais en vrai à voir
+#         arrive = time.time()
+#         if bouton.value() == 0:
+#             time.sleep_ms(30)
+#             if bouton.value() == 0:
+#                 while bouton.value() == 0:
+#                     pass
+#                 time.sleep_ms(30)
+
+#                 choix_aleatoire = True # on change l'état pour passer au mode aleatoire
+#                 break
+
+#     # on set le timer à 10 secondes
+#     time.sleep_ms(10000)
+#     if bouton.value() == 1:
 
     for i in range(26):
         lettre = chr(ord('a') + i)  
