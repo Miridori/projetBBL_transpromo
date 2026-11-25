@@ -1,20 +1,30 @@
-from machine import I2C, Pin
+import struct # Sert à convertir les octets bruts du fichier en vrais nombres (ex: 16 bits)
+from machine import I2C, Pin, PWM
 import time
 from pca9685 import PCA9685
 
-# Réglages
+# ------------------------------------------ 
+# PARAMETRES 
+# ------------------------------------------
+
+# Pour l'audio 
+PIN_AUDIO = 2
+pwm = PWM(Pin(PIN_AUDIO))
+pwm.freq(35000)
+
+frequence_wav = 16000
+delai_us = int(1_000_000 / frequence_wav)  # 125 µs entre chaque échantillon
+
 PIN_SDA = 0
 PIN_SCL = 1
 ADRESSE_PCA = 0x40
 
-#Les positions correspondent à l'ordre d'une cellule braille classique
 CANAL_SERVO_1 = 4 # Haut Gauche
 CANAL_SERVO_2 = 7 # Milieu Gauche
 CANAL_SERVO_3 = 8 # Bas Gauche
 CANAL_SERVO_4 = 10 # Haut Droit
 CANAL_SERVO_5 = 13 # Milieu Droit
 CANAL_SERVO_6 = 15 # Bas Droit
-
 liste_servo = [CANAL_SERVO_1, CANAL_SERVO_2, CANAL_SERVO_3, CANAL_SERVO_4, CANAL_SERVO_5, CANAL_SERVO_6]
 
 FREQUENCE = 50          # Hz
@@ -24,17 +34,33 @@ ANGLE_BAS = 0
 ANGLE_HAUT = 90         #### à changer pour voir quel angle fait monter le piston
 
 DELAI_SERVO = 300    # temps laissé à UN servo pour finir son mouvement
-PAUSE_LETTRE = 2000  # temps pendant lequel la lettre reste affichée, on peut mettre plus longtemps, 2000 = 2sec
+PAUSE_LETTRE = 1000  # temps pendant lequel la lettre reste affichée, on peut mettre plus longtemps, 2000 = 2sec
 
-alphabet_braille = [[1,0,0,0,0,0], [1,1,0,0,0,0], [1,0,0,1,0,0], [1,0,0,1,1,0], [1,0,0,0,1,0], [1,1,0,1,0,0], [1,1,0,1,1,0], [1,1,0,0,1,0], [0,1,0,1,0,0], [0,1,0,1,1,0],
-                   [1,0,1,0,0,0], [1,1,1,0,0,0], [1,0,1,1,0,0], [1,0,1,1,1,0], [1,0,1,0,1,0], [1,1,1,1,0,0], [1,1,1,1,1,0], [1,1,1,0,1,0], [0,1,1,1,0,0], [0,1,1,1,1,0],
-                  [1,0,1,0,0,1], [1,1,1,0,0,1], [0,1,0,1,1,1], [1,0,1,1,0,1], [1,0,1,1,1,1], [1,0,1,0,1,1]]
+PIN_BOUTON = 4
+# A modifier
+
+# alphabet_braille = [[1,0,0,0,0,0], [1,1,0,0,0,0], [1,0,0,1,0,0], [1,0,0,1,1,0], [1,0,0,0,1,0], [1,1,0,1,0,0], [1,1,0,1,1,0], [1,1,0,0,1,0], [0,1,0,1,0,0], [0,1,0,1,1,0],
+#                    [1,0,1,0,0,0], [1,1,1,0,0,0], [1,0,1,1,0,0], [1,0,1,1,1,0], [1,0,1,0,1,0], [1,1,1,1,0,0], [1,1,1,1,1,0], [1,1,1,0,1,0], [0,1,1,1,0,0], [0,1,1,1,1,0],
+#                   [1,0,1,0,0,1], [1,1,1,0,0,1], [0,1,0,1,1,1], [1,0,1,1,0,1], [1,0,1,1,1,1], [1,0,1,0,1,1]]
+
+alphabet_braille = {
+    'a': ["A.wav", [1,0,0,0,0,0]], 'b': ["B.wav", [1,1,0,0,0,0]], 'c': ["C.wav", [1,0,0,1,0,0]],
+    'd': ["D.wav", [1,0,0,1,1,0]], 'e': ["E.wav", [1,0,0,0,1,0]], 'f': ["F.wav", [1,1,0,1,0,0]],
+    'g': ["G.wav", [1,1,0,1,1,0]], 'h': ["H.wav", [1,1,0,0,1,0]], 'i': ["I.wav", [0,1,0,1,0,0]],
+    'j': ["J.wav", [0,1,0,1,1,0]], 'k': ["K.wav", [1,0,1,0,0,0]], 'l': ["L.wav", [1,1,1,0,0,0]],
+    'm': ["M.wav", [1,0,1,1,0,0]], 'n': ["N.wav", [1,0,1,1,1,0]], 'o': ["O.wav", [1,0,1,0,1,0]],
+    'p': ["P.wav", [1,1,1,1,0,0]], 'q': ["Q.wav", [1,1,1,1,1,0]], 'r': ["R.wav", [1,1,1,0,1,0]],
+    's': ["S.wav", [0,1,1,1,0,0]], 't': ["T.wav", [0,1,1,1,1,0]], 'u': ["U.wav", [1,0,1,0,0,1]],
+    'v': ["V.wav", [1,1,1,0,0,1]], 'w': ["W.wav", [0,1,0,1,1,1]], 'x': ["X.wav", [1,0,1,1,0,1]],
+    'y': ["Y.wav", [1,0,1,1,1,1]], 'z': ["Z.wav", [1,0,1,0,1,1]]
+}
 
 # alphabet_braille = {'a':[1,0,0,0,0,0], 'b':[1,1,0,0,0,0], 'c':[1,0,0,1,0,0], 'd':[1,0,0,1,1,0], 'e':[1,0,0,0,1,0], 'f':[1,1,0,1,0,0], 'g':[1,1,0,1,1,0], 'h':[1,1,0,0,1,0], 'i':[0,1,0,1,0,0], 'j':[0,1,0,1,1,0],
 #                   'k':[1,0,1,0,0,0], 'l':[1,1,1,0,0,0], 'm':[1,0,1,1,0,0], 'n':[1,0,1,1,1,0], 'o':[1,0,1,0,1,0], 'p':[1,1,1,1,0,0], 'q':[1,1,1,1,1,0], 'r':[1,1,1,0,1,0], 's':[0,1,1,1,0,0], 't':[0,1,1,1,1,0],
 #                  'u':[1,0,1,0,0,1], 'v':[1,1,1,0,0,1], 'w':[0,1,0,1,1,1], 'x':[1,0,1,1,0,1], 'y':[1,0,1,1,1,1], 'z':[1,0,1,0,1,1]}
 
 
+fichier_wav = "Bienvenue.wav"
 # -----------------------------------
 # Initialisation
 # -----------------------------------
@@ -43,6 +69,13 @@ print("Appareils I2C détectés :", [hex(a) for a in i2c.scan()])
 
 pca = PCA9685(i2c, address=ADRESSE_PCA)
 pca.freq(FREQUENCE)
+
+bouton = Pin(PIN_BOUTON, Pin.IN, Pin.PULL_DOWN)
+etat_actuel = [1, 1, 1, 1, 1, 1]
+
+# -----------------------------------
+# Fonctions
+# -----------------------------------
 
 def set_servo_angle(canal, angle):
     angle = max(0, min(180, angle))
@@ -53,16 +86,33 @@ def set_servo_angle(canal, angle):
 
 def relacher_servo(canal):
     pca.duty(canal, 0)
+    
+def audio(nom_fichier):
+    chemin = "Alphabet_audio/" + nom_fichier
+    try:
+        with open(chemin, "rb") as f:
+            f.seek(44)
+            buf = bytearray(1024)
+            duty = pwm.duty_u16
+            ticks_us = time.ticks_us
+            ticks_diff = time.ticks_diff
+            unpack_from = struct.unpack_from
 
-# -----------------------------------
-# Affichage d'une lettre
-# -----------------------------------
-# etat_actuel[i] = 1 si le picot i est levé, 0 sinon
-# par ex afficher([1,0,0,0,0,0])
-etat_actuel = [0, 0, 0, 0, 0, 0] # à mettre sur 1
-
-
-# amélioration : ajouter le bouton, le passage entre chaque lettre se fait quand on clique sur le bouton 
+            while True:
+                octets_lus = f.readinto(buf)
+                if octets_lus == 0:
+                    break
+                t_suivant = ticks_us()
+                for i in range(0, octets_lus - 1, 2):
+                    valeur = unpack_from("<h", buf, i)[0] + 32768
+                    duty(valeur)
+                    t_suivant += delai_us
+                    while ticks_diff(t_suivant, ticks_us()) > 0:
+                        pass
+        pwm.duty_u16(0) 
+    except OSError:
+        print("Fichier introuvable :", nom_fichier)
+        
 def afficher(config):
     # on baisse ceux qui doivent être baissé si jamais ils sont levéss
     for i in range(6):
@@ -78,17 +128,40 @@ def afficher(config):
             etat_actuel[i] = 1 # on met à jour 
             time.sleep_ms(DELAI_SERVO)
 
+
+# Test bouton
+#     indice_lettre = 0
+#     while True:
+#         if bouton.value() == 0:
+#             time.sleep_ms(30)
+#             if bouton.value() == 0:
+#                 while bouton.value() == 0:
+#                     pass
+#                 time.sleep_ms(30)
+#                 
+#                 print(indice_lettre)
+#                 
+#                 indice_lettre+=1
+
+
+# -----------------------------------
 # Programme principal
+# -----------------------------------
 print("Si jamais ça part en couilles, Ctrl+C pour couper le programme")
 try:
-    # Position de départ : tout baissé 
+    # Position de départ : tout RELEVÉ (pour correspondre à etat_actuel = [1,1,1,1,1,1])
     for canal in liste_servo:
-        set_servo_angle(canal, ANGLE_BAS)
+        set_servo_angle(canal, ANGLE_HAUT)
         time.sleep_ms(DELAI_SERVO)
+        
+    audio("Bienvenue.wav")
 
-# chr(ord('A') : ca donne les lettres de l'alphabet dans l'ordre
-    for indice, config in enumerate(alphabet_braille):
-        print("Lettre :", chr(ord('A') + indice), config)
+    for i in range(26):
+        lettre = chr(ord('a') + i)  
+        fichier_audio, config = alphabet_braille[lettre] 
+                     
+        print("Lettre :", lettre.upper(), config)
+        audio(fichier_audio)      
         afficher(config)
         time.sleep_ms(PAUSE_LETTRE)
         
