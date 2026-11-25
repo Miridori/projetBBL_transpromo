@@ -85,7 +85,7 @@ def afficher(config):
             time.sleep_ms(DELAI_SERVO)
 
 # Programme principal
-print("Si jamais ça part en couilles, Ctrl+C pour couper le programme")
+print("Si jamais ça part en cacahuètes, Ctrl+C pour couper le programme")
 try:
     if bouton.value() == 0:
         time.sleep_ms(30)
