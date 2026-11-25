@@ -87,6 +87,40 @@ def afficher(config):
 # Programme principal
 print("Si jamais ça part en cacahuètes, Ctrl+C pour couper le programme")
 try:
+    # Lever tous les picots
+    for canal in liste_servo:
+        set_servo_angle(canal, ANGLE_HAUT)
+        time.sleep_ms(DELAI_SERVO)
+
+    # MEttre l'audio bienvenue
+
+    # Attendre 10sec (avec un timer de 10 secondes). Si on appuie durant ce laps de temps, créer variable choix_aleatoire = False. Puis baisser tous les picots
+    choix_aleatoire = False # par défaut
+    depart = time.time()
+    arrive = time.time()
+
+    while arrive-depart < 10 : # on a mit 10 sec mais en vrai à voir
+        arrive = time.time()
+        if bouton.value() == 0:
+            time.sleep_ms(30)
+            if bouton.value() == 0:
+                while bouton.value() == 0:
+                    pass
+                time.sleep_ms(30)
+
+                choix_aleatoire = True # on change l'état pour passer au mode aleatoire
+                break
+
+    # on set le timer à 10 secondes
+
+    # Position de départ : tout baissé 
+    for canal in liste_servo:
+        set_servo_angle(canal, ANGLE_BAS)
+        time.sleep_ms(DELAI_SERVO)
+
+    # Lancer le code principal, en adaptant si chois_aleatoire = True ou choix_aleatoire = False
+    # si choix_aleatoire = False → alphabet ordre normal, sinon mode aléatoire
+
     if bouton.value() == 0:
         time.sleep_ms(30)
         if bouton.value() == 0:
@@ -95,18 +129,17 @@ try:
                 pass
             time.sleep_ms(30)
 
-    # Position de départ : tout baissé 
-    for canal in liste_servo:
-        set_servo_angle(canal, ANGLE_BAS)
-        time.sleep_ms(DELAI_SERVO)
+    
 
 # chr(ord('A') : ca donne les lettres de l'alphabet dans l'ordre
-    for indice, config in enumerate(alphabet_braille):
-        print("Lettre :", chr(ord('A') + indice), config)
-        afficher(config)
-        time.sleep_ms(PAUSE_LETTRE)
-        
-    print("Alphabet terminé")
+    time.sleep_ms(10000)
+    if bouton.value() == 1:
+        for indice, config in enumerate(alphabet_braille):
+            print("Lettre :", chr(ord('A') + indice), config)
+            afficher(config)
+            time.sleep_ms(PAUSE_LETTRE)
+    else :
+        print("Alphabet terminé")
 except KeyboardInterrupt:
     print("Arrêt demandé")
 finally:
